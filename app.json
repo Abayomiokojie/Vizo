@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Aora",
-    "slug": "Aora",
+    "name": "Vizo",
+    "slug": "Vizo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "aora",
+    "scheme": "vizo",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

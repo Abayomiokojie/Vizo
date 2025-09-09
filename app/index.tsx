@@ -10,7 +10,7 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-      <Text>Aora.</Text>
+      <Text>Vizo.</Text>
       <StatusBar barStyle="dark-content" backgroundColor="black" />
       <Link href="/profile" className="text-blue-500 text-5xl font-bold">
         Go to Profile
