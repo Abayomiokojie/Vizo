@@ -3,17 +3,11 @@ import { StatusBar, Text, View } from "react-native";
 
 export default function Index() {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Vizo.</Text>
+    <View className="flex-1 justify-center items-center bg-white">
+      <Text className="text-3xl font-pblack">Vizo!</Text>
       <StatusBar barStyle="dark-content" backgroundColor="black" />
-      <Link href="/profile" className="text-blue-500 text-5xl font-bold">
-        Go to Profile
+      <Link href="/home" className="text-blue-700">
+        Home
       </Link>
     </View>
   );
