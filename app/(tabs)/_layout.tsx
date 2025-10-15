@@ -1,9 +1,7 @@
-import { View, Text } from "react-native";
+import { View, Text, Image } from "react-native";
 import React from "react";
 import { Tabs, Redirect } from "expo-router";
 import { icons } from "../../constants";
-import { Image } from "react-native";
-import { StatusBar } from "expo-status-bar";
 
 type TabIconProps = {
   icon: any;
@@ -14,7 +12,10 @@ type TabIconProps = {
 
 const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
   return (
-    <View className="flex items-center justify-center gap-2">
+    <View
+      className="flex items-center justify-center"
+      style={{ flexShrink: 1 }}
+    >
       <Image
         source={icon}
         resizeMode="contain"
@@ -22,10 +23,9 @@ const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
         className="w-6 h-6"
       />
       <Text
-        className={` block text-nowrap${
-          focused ? "font-psemibold" : "font-pregular "
-        } text-nowrap text-xs`}
+        className={`${focused ? "font-psemibold" : "font-pregular"} text-xs`}
         style={{ color: color }}
+        numberOfLines={1}
       >
         {name}
       </Text>

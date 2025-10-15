@@ -2,6 +2,8 @@ import { SplashScreen, Stack } from "expo-router";
 import "../global.css";
 import { useFonts } from "expo-font";
 import { useEffect } from "react";
+import GlobalProvider from "@/context/GlobalProvider";
+// import { StatusBar } from "expo-status-bar";
 
 export default function RootLayout() {
   SplashScreen.preventAutoHideAsync();
@@ -28,11 +30,18 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen
-        name="index"
-        options={{ headerTitle: "Aora", headerShown: false }}
-      />
-    </Stack>
+    <GlobalProvider>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: "#161622" },
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(auth)" />
+        {/* <StatusBar style="dark" /> */}
+      </Stack>
+    </GlobalProvider>
   );
 }
