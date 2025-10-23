@@ -1,67 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { View, Text, TouchableOpacity, Image } from "react-native";
 import { icons } from "../constants";
-import { addBookmark, removeBookmark } from "../lib/appwrite";
 import { useGlobalContext } from "../context/GlobalProvider";
-
-interface Creator {
-  name: string;
-  avatar?: string;
-}
+import { VideoPost } from "../lib/appwrite";
 
 interface VideoCardProps {
-  id: string;
-  title: string;
-  creator: Creator;
-  thumbnail: string;
-  video: string;
+  post: VideoPost;
   activeVideoId: string | null;
   setActiveVideoId: (id: string | null) => void;
-  initialBookmarked?: boolean;
-  bookmarkId?: string;
-  onBookmarkRemoved?: () => void;
 }
 
 const VideoCard = ({
-  id,
-  title,
-  creator,
-  thumbnail,
-  video,
+  post,
   activeVideoId,
   setActiveVideoId,
-  initialBookmarked = false,
-  bookmarkId: initialBookmarkId,
-  onBookmarkRemoved,
 }: VideoCardProps) => {
+  const { $id: id, title, creator, thumbnail, video } = post;
   const isActive = activeVideoId === id;
-  const { user } = useGlobalContext();
-  const [bookmarked, setBookmarked] = useState(initialBookmarked);
-  const [bookmarkId, setBookmarkId] = useState(initialBookmarkId || null);
+  const { toggleBookmark, bookmarks } = useGlobalContext();
 
-  const toggleBookmark = async () => {
-    try {
-      if (bookmarked && bookmarkId) {
-        await removeBookmark(bookmarkId);
-        setBookmarked(false);
-        setBookmarkId(null);
-        onBookmarkRemoved?.();
-      } else {
-        const res = await addBookmark(user.$id, id);
-        setBookmarked(true);
-        setBookmarkId(res.$id);
-      }
-    } catch (err) {
-      console.error("Bookmark toggle failed:", err);
-    }
-  };
+  const isBookmarked = bookmarks.some((b: VideoPost) => b.$id === id);
 
   const player = useVideoPlayer(video, (p) => {
     p.loop = false;
   });
 
-  // Sync player with active state
   useEffect(() => {
     if (isActive) {
       player.play();
@@ -70,7 +34,6 @@ const VideoCard = ({
     }
   }, [isActive, player]);
 
-  // Reset overlay when video finishes
   useEffect(() => {
     const sub = player.addListener("playToEnd", () => {
       setActiveVideoId(null);
@@ -80,7 +43,6 @@ const VideoCard = ({
 
   return (
     <View className="flex flex-col items-center px-4 mb-14">
-      {/* Header */}
       <View className="flex flex-row gap-3 items-start w-full">
         <View className="flex justify-center items-center flex-row flex-1">
           <View className="w-[46px] h-[46px] rounded-lg border border-secondary flex justify-center items-center p-0.5">
@@ -106,14 +68,19 @@ const VideoCard = ({
               className="text-xs text-gray-100 font-pregular"
               numberOfLines={1}
             >
-              {creator.name}
+              {creator.username}
             </Text>
           </View>
         </View>
         <View>
-          <TouchableOpacity onPress={toggleBookmark}>
+          <TouchableOpacity
+            onPress={() => toggleBookmark(post)}
+            className="p-2 border border-slate-600 rounded-xl active:scale-110 origin-center active:bg-slate-100/60"
+          >
             <Image
-              source={bookmarked ? icons.bookmarkFilled : icons.bookmarkOutline}
+              source={
+                isBookmarked ? icons.bookmarkFilled : icons.bookmarkOutline
+              }
               className="w-6 h-6"
               resizeMode="contain"
             />
@@ -125,7 +92,6 @@ const VideoCard = ({
         </View>
       </View>
 
-      {/* Video / Thumbnail */}
       <View className="w-full h-60 rounded-xl mt-3 relative overflow-hidden">
         <VideoView
           player={player}
@@ -161,6 +127,18 @@ const VideoCard = ({
           </TouchableOpacity>
         )}
       </View>
+      {/* <View className="flex items-start w-full mt-2">
+        <TouchableOpacity
+          onPress={() => toggleBookmark(post)}
+          className="p-2 border border-slate-600 rounded-xl"
+        >
+          <Image
+            source={isBookmarked ? icons.bookmarkFilled : icons.bookmarkOutline}
+            className="w-6 h-6"
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </View> */}
     </View>
   );
 };

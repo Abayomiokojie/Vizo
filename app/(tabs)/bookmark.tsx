@@ -6,62 +6,28 @@ import {
   Text,
   Image,
   TouchableOpacity,
-  RefreshControl,
 } from "react-native";
 import { router } from "expo-router";
 
 import { icons } from "../../constants";
-import useAppwrite from "../../lib/useAppwrite";
-import { getBookmarkedPosts, VideoPost } from "../../lib/appwrite";
 import { useGlobalContext } from "../../context/GlobalProvider";
 import EmptyState from "@/components/EmptyState";
 import VideoCard from "@/components/VideoCard";
-import { useFocusEffect } from "@react-navigation/native";
 
 const Bookmarks = () => {
-  const { user } = useGlobalContext();
-
-  // Fetch bookmarked posts for this user
-  const { data, refetch } = useAppwrite(() => getBookmarkedPosts(user.$id));
-  const posts: VideoPost[] = data ?? [];
-
-  // Track which video is active
+  const { bookmarks } = useGlobalContext();
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
-
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
-  };
-
-  useFocusEffect(
-    React.useCallback(() => {
-      refetch(); // 👈 refresh every time page is focused
-    }, [refetch])
-  );
 
   return (
     <SafeAreaView className="bg-primary h-full">
       <FlatList
-        data={posts}
+        data={bookmarks}
         keyExtractor={(item) => item.$id}
         renderItem={({ item }) => (
           <VideoCard
-            id={item.$id}
-            title={item.title}
-            thumbnail={item.thumbnail}
-            video={item.video}
-            creator={{
-              name: item.creator?.username ?? "Unknown",
-              avatar: item.creator?.avatar ?? "",
-            }}
+            post={item}
             activeVideoId={activeVideoId}
             setActiveVideoId={setActiveVideoId}
-            initialBookmarked={true}
-            bookmarkId={item.bookmarkId}
-            onBookmarkRemoved={refetch}
           />
         )}
         ListEmptyComponent={() => (
@@ -90,9 +56,6 @@ const Bookmarks = () => {
           </View>
         )}
         contentContainerStyle={{ paddingBottom: 100 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
       />
     </SafeAreaView>
   );

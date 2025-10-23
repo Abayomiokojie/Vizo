@@ -9,13 +9,21 @@ import { useGlobalContext } from "../../context/GlobalProvider";
 import EmptyState from "@/components/EmptyState";
 import VideoCard from "@/components/VideoCard";
 import InfoBox from "@/components/InfoBox";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import Loader from "@/components/Loader";
 
 const Profile = () => {
   const { user, setUser, setIsLogged } = useGlobalContext();
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
-  const { data } = useAppwrite(() => getUserPosts(user.$id));
+  const memoizedGetUserPosts = useCallback(() => {
+    if (user?.$id) {
+      return getUserPosts(user.$id);
+    }
+    return Promise.resolve([]);
+  }, [user?.$id]);
+
+  const { data, loading } = useAppwrite(memoizedGetUserPosts);
   const posts: VideoPost[] = data ?? [];
 
   const logout = async () => {
@@ -41,34 +49,23 @@ const Profile = () => {
         keyExtractor={(item) => item.$id}
         renderItem={({ item }) => (
           <VideoCard
-            id={item.$id}
-            title={item.title}
-            thumbnail={item.thumbnail}
-            video={item.video}
-            creator={{
-              name: item.creator?.username ?? "Unknown",
-              avatar: item.creator?.avatar ?? "",
-            }}
-            // creator={{
-            //   name: item.creator?.username ?? user?.username ?? "Unknown",
-            //   avatar:
-            //     item.creator?.avatar ??
-            //     user?.avatar ??
-            //     "https://www.gravatar.com/avatar/?d=mp",
-            // }}
+            post={item}
             activeVideoId={activeVideoId}
             setActiveVideoId={setActiveVideoId}
           />
         )}
-        ListEmptyComponent={() => (
-          <EmptyState
-            title="No Videos Found"
-            subtitle="No videos found for this profile"
-          />
-        )}
+        ListEmptyComponent={() =>
+          loading ? (
+            <Loader isLoading={loading} />
+          ) : (
+            <EmptyState
+              title="No Videos Found"
+              subtitle="No videos found for this profile"
+            />
+          )
+        }
         ListHeaderComponent={() => (
           <View className="w-full flex justify-center items-center mt-6 mb-12 px-4">
-            {/* Logout button */}
             <TouchableOpacity
               onPress={logout}
               className="flex w-full items-end mb-10"
@@ -80,7 +77,6 @@ const Profile = () => {
               />
             </TouchableOpacity>
 
-            {/* Avatar */}
             <View className="w-16 h-16 border border-secondary rounded-lg flex justify-center items-center">
               <Image
                 source={{ uri: user?.avatar }}
@@ -89,14 +85,12 @@ const Profile = () => {
               />
             </View>
 
-            {/* Username */}
             <InfoBox
               title={user?.username ?? "Anonymous"}
               containerStyles="mt-5"
               titleStyles="text-lg"
             />
 
-            {/* Stats */}
             <View className="mt-5 flex flex-row">
               <InfoBox
                 title={posts.length}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   NativeSyntheticEvent,
   NativeScrollEvent,
@@ -9,7 +9,6 @@ import {
   Text,
   View,
 } from "react-native";
-// import { FlatList, Image, RefreshControl, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 
 import { images } from "../../constants";
@@ -20,33 +19,42 @@ import SearchInput from "@/components/SearchInput";
 import Trending from "@/components/Trending";
 import VideoCard from "@/components/VideoCard";
 import { useGlobalContext } from "@/context/GlobalProvider";
-// import TestVideo from "@/components/VideoTest";
+
 const EMPTY_POSTS: VideoPost[] = [];
 
 const Home = () => {
   const { user } = useGlobalContext();
-  const { data: posts, refetch } = useAppwrite<VideoPost[]>(getAllPosts);
-  const { data: latestPosts } = useAppwrite<VideoPost[]>(getLatestPosts);
+
+  // const memoizedGetAllPosts = useCallback(() => getAllPosts(user?.$id), [user]);
+  // const memoizedGetLatestPosts = useCallback(() => getLatestPosts(user?.$id), [user]);
+  const memoizedGetAllPosts = useCallback(() => getAllPosts(), []);
+  const memoizedGetLatestPosts = useCallback(() => getLatestPosts(), []);
+
+  const { data: posts, refetch: refetchPosts } =
+    useAppwrite(memoizedGetAllPosts);
+  const { data: latestPosts, refetch: refetchLatest } = useAppwrite(
+    memoizedGetLatestPosts
+  );
+
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [isTrendingVisible, setIsTrendingVisible] = useState(true);
-
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
+    await refetchPosts();
+    await refetchLatest();
     setRefreshing(false);
   };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const yOffset = event.nativeEvent.contentOffset.y;
-    // If the user has scrolled past the header, the trending videos are no longer visible
     setIsTrendingVisible(yOffset < headerHeight);
   };
 
   const viewabilityConfig = {
-    itemVisiblePercentThreshold: 70, // consider visible if 70% is on screen
+    itemVisiblePercentThreshold: 70,
   };
 
   const onViewableItemsChanged = ({
@@ -54,11 +62,9 @@ const Home = () => {
   }: {
     viewableItems: any[];
   }) => {
-    // If the current active video is no longer visible, pause it
     const stillVisible = viewableItems.some(
       (v) => v.item.$id === activeVideoId
     );
-
     if (!stillVisible) {
       setActiveVideoId(null);
     }
@@ -79,7 +85,6 @@ const Home = () => {
               {user?.username ?? "Anonymous"}
             </Text>
           </View>
-
           <View className="mt-1.5">
             <Image
               source={images.logoSmall}
@@ -88,14 +93,11 @@ const Home = () => {
             />
           </View>
         </View>
-
         <SearchInput />
-
         <View className="w-full flex-1 pt-5 pb-8">
           <Text className="text-lg font-pregular text-gray-100 mb-3">
             Latest Videos
           </Text>
-
           <Trending
             posts={latestPosts ?? EMPTY_POSTS}
             isTrendingVisible={isTrendingVisible}
@@ -109,18 +111,11 @@ const Home = () => {
   return (
     <SafeAreaView className="bg-primary h-full pt-8">
       <FlatList
-        data={posts}
+        data={posts ?? []}
         keyExtractor={(item) => item.$id}
         renderItem={({ item }) => (
           <VideoCard
-            id={item.$id}
-            title={item.title}
-            creator={{
-              name: item.creator?.username ?? "Unknown",
-              avatar: item.creator?.avatar ?? "",
-            }}
-            thumbnail={item.thumbnail}
-            video={item.video}
+            post={item}
             activeVideoId={activeVideoId}
             setActiveVideoId={setActiveVideoId}
           />
@@ -130,7 +125,7 @@ const Home = () => {
         decelerationRate="fast"
         ListHeaderComponent={listHeader}
         onScroll={handleScroll}
-        scrollEventThrottle={16} // Fire scroll events every 16ms
+        scrollEventThrottle={16}
         ListEmptyComponent={() => (
           <EmptyState
             title="No Videos Found"
