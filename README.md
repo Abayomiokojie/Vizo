@@ -12,6 +12,8 @@
   </div>
 
   <h3 align="center">Video Sharing App</h3>
+
+  [**Watch the Demo**](https://drive.google.com/file/d/1fmOEgSpTtGcCQixI6aTFqOg8FYspQ0tf/view?usp=drivesdk)
 </div>
 
 ## 📋 <a name="table">Table of Contents</a>
@@ -19,8 +21,9 @@
 1. 🤖 [Introduction](#introduction)
 2. ⚙️ [Tech Stack](#tech-stack)
 3. 🔋 [Features](#features)
-4. 🤸 [Quick Start](#quick-start)
-5. 🚀 [More](#more)
+4. 🎥 [Demo](#demo)
+5. 🤸 [Quick Start](#quick-start)
+6. 🚀 [More](#more)
 
 ## <a name="introduction">🤖 Introduction</a>
 
@@ -58,6 +61,10 @@ this app showcases impressive design and functionality, enabling seamless sharin
 👉 **Animations**: Dynamic animations using the Animatable library to enhance user interaction and engagement throughout the app's UI.
 
 and many more, including code architecture and reusability
+
+## <a name="demo">🎥 Demo</a>
+
+[Watch a short demo of the app in action!](https://drive.google.com/file/d/1fmOEgSpTtGcCQixI6aTFqOg8FYspQ0tf/view?usp=drivesdk)
 
 ## <a name="quick-start">🤸 Quick Start</a>
 
