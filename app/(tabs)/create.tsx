@@ -1,20 +1,6 @@
-// import { Text, View } from "react-native";
-// import React from "react";
-
-// const Create = () => {
-//   return (
-//     <View>
-//       <Text>Create</Text>
-//     </View>
-//   );
-// };
-
-// export default Create;
-
 import { useState } from "react";
 import { router } from "expo-router";
-import { ResizeMode, Video } from "expo-av";
-import * as DocumentPicker from "expo-document-picker";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
@@ -30,6 +16,7 @@ import { createVideoPost } from "../../lib/appwrite";
 import CustomButton from "@/components/CustomButton";
 import FormField from "@/components/FormField";
 import { useGlobalContext } from "../../context/GlobalProvider";
+import * as ImagePicker from "expo-image-picker";
 
 const Create = () => {
   const { user } = useGlobalContext();
@@ -42,15 +29,31 @@ const Create = () => {
   });
 
   const openPicker = async (selectType: "image" | "video") => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type:
-        selectType === "image"
-          ? ["image/png", "image/jpg", "image/jpeg"]
-          : ["video/mp4"],
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission required",
+        "We need access to your media library."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: selectType === "image" ? "images" : "videos",
+      allowsEditing: true,
+      quality: 1,
     });
 
     if (!result.canceled) {
-      const file = result.assets[0];
+      const asset = result.assets[0];
+      const file = {
+        uri: asset.uri,
+        name:
+          asset.fileName || `upload.${selectType === "image" ? "jpg" : "mp4"}`,
+        type: selectType === "image" ? "image/jpeg" : "video/mp4",
+        size: asset.fileSize,
+      };
+
       if (selectType === "image") {
         setForm((prev) => ({ ...prev, thumbnail: file }));
       } else {
@@ -91,6 +94,24 @@ const Create = () => {
     }
   };
 
+  const VideoPreview = ({ uri }: { uri: string }) => {
+    const player = useVideoPlayer(uri, (player) => {
+      player.loop = true;
+      player.play();
+    });
+
+    return (
+      <VideoView
+        player={player}
+        style={{ width: "100%", height: 256, borderRadius: 16 }}
+        allowsFullscreen
+        allowsPictureInPicture
+        contentFit="cover"
+        // nativeControls={false}
+      />
+    );
+  };
+
   return (
     <SafeAreaView className="bg-primary h-full">
       <ScrollView className="px-4 my-6">
@@ -111,13 +132,7 @@ const Create = () => {
           </Text>
           <TouchableOpacity onPress={() => openPicker("video")}>
             {form.video ? (
-              <Video
-                source={{ uri: form.video.uri }}
-                className="w-full h-64 rounded-2xl"
-                useNativeControls
-                resizeMode={ResizeMode.COVER}
-                isLooping
-              />
+              <VideoPreview uri={form.video.uri} />
             ) : (
               <View className="w-full h-40 px-4 bg-black-100 rounded-2xl border border-black-200 flex justify-center items-center">
                 <View className="w-14 h-14 border border-dashed border-secondary-100 flex justify-center items-center">

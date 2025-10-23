@@ -11,10 +11,15 @@ import logout from "../assets/icons/logout.png";
 import eyeHide from "../assets/icons/eye-hide.png";
 import eye from "../assets/icons/eye.png";
 import play from "../assets/icons/play.png";
+import bookmarkFilled from "../assets/icons/bookmark-filled.png";
+import bookmarkOutline from "../assets/icons/bookmark-outline.png";
+
 
 export default {
   play,
   bookmark,
+  bookmarkFilled,
+  bookmarkOutline,
   home,
   plus,
   profile,

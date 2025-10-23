@@ -1,5 +1,5 @@
 import { Alert } from "react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 type AsyncFn<T> = () => Promise<T>;
 
@@ -7,7 +7,7 @@ function useAppwrite<T>(fn: AsyncFn<T>) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fn();
@@ -19,16 +19,15 @@ function useAppwrite<T>(fn: AsyncFn<T>) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fn]);
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchData]);
 
   const refetch = () => fetchData();
 
-  return { data, loading, refetch };
+  return { data, loading, refetch, setData };
 }
 
 export default useAppwrite;

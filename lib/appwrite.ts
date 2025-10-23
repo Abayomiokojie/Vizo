@@ -48,6 +48,7 @@ export interface VideoPost extends Models.Document {
   prompt: string;
   users: string;
   creator: User;
+  bookmarkId?: string;
 }
 
 //  Auth — Create User
@@ -150,43 +151,74 @@ export async function signOut() {
 }
 
 //  Upload File
-export async function uploadFile(file: any, type: "image" | "video") {
-  if (!file) return null;
+// export async function uploadFile(file: any, type: "image" | "video") {
+//   if (!file) return null;
 
-  const { mimeType, ...rest } = file;
-  const asset = { type: mimeType, ...rest };
+//   // const { mimeType, ...rest } = file;
+//   // const asset = { type: mimeType, ...rest };
 
-  try {
-    const uploadedFile = await storage.createFile({
-      bucketId: appwriteConfig.storageId,
-      fileId: ID.unique(),
-      file: asset,
-    });
+//   try {
+//     const uploadedFile = await storage.createFile({
+//       bucketId: appwriteConfig.storageId,
+//       fileId: ID.unique(),
+//       // file: asset,
+//       file,
+//     });
 
-    // ✅ Always return a full URL string
-    if (type === "video") {
-      return storage
-        .getFileView({
-          bucketId: appwriteConfig.storageId,
-          fileId: uploadedFile.$id,
-        })
-        .toString();
-    }
+//     // Always return a full URL string
+//     if (type === "video") {
+//       return storage
+//         .getFileView({
+//           bucketId: appwriteConfig.storageId,
+//           fileId: uploadedFile.$id,
+//         })
+//         .toString();
+//     }
 
-    return storage
-      .getFilePreview({
-        bucketId: appwriteConfig.storageId,
-        fileId: uploadedFile.$id,
-        width: 2000,
-        height: 2000,
-        gravity: ImageGravity.Top,
-        quality: 100,
-        output: ImageFormat.Jpg, // optional, but explicit
-      })
-      .toString();
-  } catch (error: any) {
-    throw new Error(error.message || "File upload failed");
+//     return storage
+//       .getFilePreview({
+//         bucketId: appwriteConfig.storageId,
+//         fileId: uploadedFile.$id,
+//         width: 2000,
+//         height: 2000,
+//         gravity: ImageGravity.Top,
+//         quality: 100,
+//         output: ImageFormat.Jpg,
+//       })
+//       .toString();
+//   } catch (error: any) {
+//     throw new Error(error.message || "File upload failed");
+//   }
+// }
+
+// Helper: build a public URL for a file
+function getFileUrl(fileId: string, type: "image" | "video"): string {
+  const endpoint = appwriteConfig.endpoint; // e.g. "https://cloud.appwrite.io/v1"
+  const bucketId = appwriteConfig.storageId;
+  const projectId = appwriteConfig.projectId;
+
+  if (type === "video") {
+    return `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
   }
+
+  return `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`;
+}
+
+// Upload File and return a valid URL string
+export async function uploadFile(
+  file: any,
+  type: "image" | "video"
+): Promise<string> {
+  if (!file) throw new Error("No file provided to upload");
+
+  const uploadedFile = await storage.createFile({
+    bucketId: appwriteConfig.storageId,
+    fileId: ID.unique(),
+    file,
+  });
+
+  // Build and return a proper https:// URL string
+  return getFileUrl(uploadedFile.$id, type);
 }
 
 //  Get File Preview / View
@@ -217,6 +249,37 @@ export function getFilePreview(
 }
 
 //  Create Video Post
+// export async function createVideoPost(form: {
+//   title: string;
+//   thumbnail: any;
+//   video: any;
+//   prompt: string;
+//   userId: string;
+// }) {
+//   try {
+//     const [thumbnailUrl, videoUrl] = await Promise.all([
+//       uploadFile(form.thumbnail, "image"),
+//       uploadFile(form.video, "video"),
+//     ]);
+
+//     return await tables.createRow({
+//       databaseId: appwriteConfig.databaseId,
+//       tableId: appwriteConfig.videoTableId,
+//       rowId: ID.unique(),
+//       data: {
+//         title: form.title,
+//         thumbnail: thumbnailUrl,
+//         video: videoUrl,
+//         prompt: form.prompt,
+//         users: form.userId,
+//       },
+//     });
+//   } catch (error: any) {
+//     throw new Error(error.message || "Failed to create post");
+//   }
+// }
+
+// Create Video Post with URL strings
 export async function createVideoPost(form: {
   title: string;
   thumbnail: any;
@@ -224,27 +287,27 @@ export async function createVideoPost(form: {
   prompt: string;
   userId: string;
 }) {
-  try {
-    const [thumbnailUrl, videoUrl] = await Promise.all([
-      uploadFile(form.thumbnail, "image"),
-      uploadFile(form.video, "video"),
-    ]);
+  const [thumbnailUrl, videoUrl] = await Promise.all([
+    uploadFile(form.thumbnail, "image"),
+    uploadFile(form.video, "video"),
+  ]);
 
-    return await tables.createRow({
-      databaseId: appwriteConfig.databaseId,
-      tableId: appwriteConfig.videoTableId,
-      rowId: ID.unique(),
-      data: {
-        title: form.title,
-        thumbnail: thumbnailUrl,
-        video: videoUrl,
-        prompt: form.prompt,
-        users: form.userId,
-      },
-    });
-  } catch (error: any) {
-    throw new Error(error.message || "Failed to create post");
-  }
+  // Debug log
+  console.log("Thumbnail URL:", thumbnailUrl);
+  console.log("Video URL:", videoUrl);
+
+  return await tables.createRow({
+    databaseId: appwriteConfig.databaseId,
+    tableId: appwriteConfig.videoTableId,
+    rowId: ID.unique(),
+    data: {
+      title: form.title,
+      thumbnail: thumbnailUrl, // guaranteed string URL
+      video: videoUrl, // guaranteed string URL
+      prompt: form.prompt,
+      users: form.userId,
+    },
+  });
 }
 
 //  Get all posts
@@ -267,6 +330,7 @@ export async function getAllPosts(): Promise<
   const posts = await tables.listRows({
     databaseId: appwriteConfig.databaseId,
     tableId: appwriteConfig.videoTableId,
+    queries: [Query.orderDesc("$createdAt")],
   });
 
   const rows = await Promise.all(
@@ -290,13 +354,6 @@ export async function getAllPosts(): Promise<
 ///  Get user posts
 export async function getUserPosts(userId: string): Promise<VideoPost[]> {
   try {
-    // const posts = await tables.listRows({
-    //   databaseId: appwriteConfig.databaseId,
-    //   tableId: appwriteConfig.videoTableId,
-    //   queries: [Query.equal("users", userId)],
-    // });
-
-    // return posts.rows as unknown as VideoPost[];
     const posts = await tables.listRows({
       databaseId: appwriteConfig.databaseId,
       tableId: appwriteConfig.videoTableId,
@@ -319,21 +376,6 @@ export async function getUserPosts(userId: string): Promise<VideoPost[]> {
     throw new Error(error.message || "Failed to fetch user posts");
   }
 }
-
-//  Search posts
-// export async function searchPosts(query: string): Promise<VideoPost[]> {
-//   try {
-//     const posts = await tables.listRows({
-//       databaseId: appwriteConfig.databaseId,
-//       tableId: appwriteConfig.videoTableId,
-//       queries: [Query.search("title", query)],
-//     });
-
-//     return posts.rows as unknown as VideoPost[];
-//   } catch (error: any) {
-//     throw new Error(error.message || "Search failed");
-//   }
-// }
 
 export async function searchPosts(query: string): Promise<VideoPost[]> {
   if (!query.trim()) return [];
@@ -436,6 +478,7 @@ export async function getLatestPosts(): Promise<VideoPost[]> {
   }
 }
 
+//  Get bookmarked posts
 export async function getBookmarkedPosts(userId: string): Promise<VideoPost[]> {
   const bookmarks = await tables.listRows({
     databaseId: appwriteConfig.databaseId,
@@ -472,6 +515,7 @@ export async function getBookmarkedPosts(userId: string): Promise<VideoPost[]> {
         prompt: video.prompt,
         users: video.users,
         creator,
+        bookmarkId: row.$id,
       };
 
       return videoPost;
@@ -481,43 +525,17 @@ export async function getBookmarkedPosts(userId: string): Promise<VideoPost[]> {
   return withVideos;
 }
 
-// export async function getBookmarkedPosts(userId: string): Promise<VideoPost[]> {
-//   const bookmarks = await tables.listRows({
-//     databaseId: appwriteConfig.databaseId,
-//     tableId: appwriteConfig.bookmarkTableId,
-//     queries: [Query.equal("userId", userId)],
-//   });
-
-//   // Expand each bookmark to include the video + creator
-//   const withVideos = await Promise.all(
-//     bookmarks.rows.map(async (row: any) => {
-//       const video = await tables.getRow({
-//         databaseId: appwriteConfig.databaseId,
-//         tableId: appwriteConfig.videoTableId,
-//         rowId: row.videoId,
-//       });
-//       const creator = await tables.getRow({
-//         databaseId: appwriteConfig.databaseId,
-//         tableId: appwriteConfig.userTableId,
-//         rowId: video.users,
-//       });
-//       return {
-//         ...(video as unknown as VideoPost),
-//         creator: creator as unknown as User,
-//       };
-//     })
-//   );
-
-//   return withVideos;
-// }
-
 // Add a bookmark
 export async function addBookmark(userId: string, videoId: string) {
   return await tables.createRow({
     databaseId: appwriteConfig.databaseId,
     tableId: appwriteConfig.bookmarkTableId,
     rowId: ID.unique(),
-    data: { userId, videoId },
+    // data: { userId, videoId },
+    data: {
+      userId: userId,
+      videoId: videoId,
+    },
   });
 }
 

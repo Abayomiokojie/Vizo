@@ -9,14 +9,14 @@ import { icons } from "../../constants";
 type TabIconProps = {
   icon: any;
   color: string;
-  name: string;
+  name?: string;
   focused: boolean;
 };
 
 const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
   return (
     <View
-      className="flex items-center justify-center"
+      className="flex items-center justify-center gap-1 mt-4"
       style={{ flexShrink: 1 }}
     >
       <Image
@@ -26,7 +26,9 @@ const TabIcon = ({ icon, color, name, focused }: TabIconProps) => {
         className="w-6 h-6"
       />
       <Text
-        className={`${focused ? "font-psemibold" : "font-pregular"} text-xs`}
+        className={`${
+          focused ? "font-psemibold" : "font-pregular"
+        } text-xs text-center w-full`}
         style={{ color: color }}
         numberOfLines={1}
       >
@@ -46,9 +48,9 @@ const TabLayout = () => {
           tabBarInactiveTintColor: "#CDCDE0",
           tabBarStyle: {
             backgroundColor: "#161622",
-            borderTopWidth: 1,
             borderTopColor: "#232533",
-            height: 84,
+            height: 98,
+            paddingTop: 10,
           },
         }}
       >

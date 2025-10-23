@@ -1,20 +1,10 @@
 import { useMemo, useState } from "react";
-import {
-  NativeSyntheticEvent,
-  NativeScrollEvent,
-  SafeAreaView,
-  FlatList,
-  Image,
-  RefreshControl,
-  Text,
-  View,
-} from "react-native";
-// import { FlatList, Image, RefreshControl, Text, View } from "react-native";
-import { StatusBar } from "expo-status-bar";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { FlatList, Image, RefreshControl, Text, View } from "react-native";
 
-import { images } from "../../constants";
-import useAppwrite from "../../lib/useAppwrite";
-import { getAllPosts, getLatestPosts, VideoPost } from "../../lib/appwrite";
+import { images } from "../constants";
+import useAppwrite from "../lib/useAppwrite";
+import { getAllPosts, getLatestPosts, VideoPost } from "../lib/appwrite";
 import EmptyState from "@/components/EmptyState";
 import SearchInput from "@/components/SearchInput";
 import Trending from "@/components/Trending";
@@ -28,8 +18,6 @@ const Home = () => {
   const { data: posts, refetch } = useAppwrite<VideoPost[]>(getAllPosts);
   const { data: latestPosts } = useAppwrite<VideoPost[]>(getLatestPosts);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
-  const [headerHeight, setHeaderHeight] = useState(0);
-  const [isTrendingVisible, setIsTrendingVisible] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -37,12 +25,6 @@ const Home = () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-  };
-
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const yOffset = event.nativeEvent.contentOffset.y;
-    // If the user has scrolled past the header, the trending videos are no longer visible
-    setIsTrendingVisible(yOffset < headerHeight);
   };
 
   const viewabilityConfig = {
@@ -66,10 +48,7 @@ const Home = () => {
 
   const listHeader = useMemo(
     () => (
-      <View
-        className="flex my-6 px-4 space-y-6"
-        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-      >
+      <View className="flex my-6 px-4 space-y-6">
         <View className="flex justify-between items-start flex-row mb-6">
           <View>
             <Text className="font-pmedium text-sm text-gray-100">
@@ -96,18 +75,15 @@ const Home = () => {
             Latest Videos
           </Text>
 
-          <Trending
-            posts={latestPosts ?? EMPTY_POSTS}
-            isTrendingVisible={isTrendingVisible}
-          />
+          <Trending posts={latestPosts ?? EMPTY_POSTS} />
         </View>
       </View>
     ),
-    [user, latestPosts, isTrendingVisible]
+    [user, latestPosts]
   );
 
   return (
-    <SafeAreaView className="bg-primary h-full pt-8">
+    <SafeAreaView className="bg-primary">
       <FlatList
         data={posts}
         keyExtractor={(item) => item.$id}
@@ -129,8 +105,6 @@ const Home = () => {
         viewabilityConfig={viewabilityConfig}
         decelerationRate="fast"
         ListHeaderComponent={listHeader}
-        onScroll={handleScroll}
-        scrollEventThrottle={16} // Fire scroll events every 16ms
         ListEmptyComponent={() => (
           <EmptyState
             title="No Videos Found"
@@ -141,7 +115,6 @@ const Home = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       />
-      <StatusBar style="light" />
     </SafeAreaView>
   );
 };

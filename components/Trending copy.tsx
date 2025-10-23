@@ -26,10 +26,9 @@ const zoomOut: Animatable.CustomAnimation<any> = {
 interface TrendingItemProps {
   activeItem: string | null;
   item: VideoPost;
-  isTrendingVisible: boolean;
 }
 
-const TrendingItem = ({ activeItem, item, isTrendingVisible }: TrendingItemProps) => {
+const TrendingItem = ({ activeItem, item }: TrendingItemProps) => {
   const [playing, setPlaying] = useState(false);
 
   const player = useVideoPlayer(item.video, (p) => {
@@ -53,17 +52,9 @@ const TrendingItem = ({ activeItem, item, isTrendingVisible }: TrendingItemProps
     return () => subs.forEach((s) => s.remove());
   }, [player]);
 
-  // Pause the video if the trending section is not visible
-  useEffect(() => {
-    if (!isTrendingVisible) {
-      setPlaying(false);
-      player.pause();
-    }
-  }, [isTrendingVisible, player]);
-
   // Consolidated effect for active item + play state
   useEffect(() => {
-    if (activeItem !== item.$id || !isTrendingVisible) {
+    if (activeItem !== item.$id) {
       // If this card is no longer active, stop playback
       setPlaying(false);
       player.pause();
@@ -75,7 +66,7 @@ const TrendingItem = ({ activeItem, item, isTrendingVisible }: TrendingItemProps
     } else {
       player.pause();
     }
-  }, [activeItem, item.$id, playing, player, isTrendingVisible]);
+  }, [activeItem, item.$id, playing, player]);
 
   return (
     <Animatable.View
@@ -117,10 +108,9 @@ const TrendingItem = ({ activeItem, item, isTrendingVisible }: TrendingItemProps
 
 interface TrendingProps {
   posts: VideoPost[];
-  isTrendingVisible: boolean;
 }
 
-const Trending = ({ posts, isTrendingVisible }: TrendingProps) => {
+const Trending = ({ posts }: TrendingProps) => {
   const [activeItem, setActiveItem] = useState<string | null>(
     posts.length > 0 ? posts[0].$id : null
   );
@@ -142,17 +132,16 @@ const Trending = ({ posts, isTrendingVisible }: TrendingProps) => {
       horizontal
       keyExtractor={(item) => item.$id}
       renderItem={({ item }) => (
-        <TrendingItem
-          activeItem={activeItem}
-          item={item}
-          isTrendingVisible={isTrendingVisible}
-        />
+        <TrendingItem activeItem={activeItem} item={item} />
       )}
       onViewableItemsChanged={viewableItemsChanged}
       viewabilityConfig={{
         itemVisiblePercentThreshold: 70,
       }}
+      contentOffset={{ x: 170, y: 170 }}
+      // removeClippedSubviews={false}
       decelerationRate="fast"
+      // snapToAlignment="center"
       showsHorizontalScrollIndicator={false}
       CellRendererComponent={({ index, style, children, ...rest }) => {
         const isActive = posts[index]?.$id === activeItem;

@@ -17,7 +17,10 @@ interface VideoCardProps {
   thumbnail: string;
   video: string;
   activeVideoId: string | null;
-  setActiveVideoId: (id: string | null) => void; //
+  setActiveVideoId: (id: string | null) => void;
+  initialBookmarked?: boolean;
+  bookmarkId?: string;
+  onBookmarkRemoved?: () => void;
 }
 
 const VideoCard = ({
@@ -28,11 +31,14 @@ const VideoCard = ({
   video,
   activeVideoId,
   setActiveVideoId,
+  initialBookmarked = false,
+  bookmarkId: initialBookmarkId,
+  onBookmarkRemoved,
 }: VideoCardProps) => {
   const isActive = activeVideoId === id;
   const { user } = useGlobalContext();
-  const [bookmarked, setBookmarked] = useState(false);
-  const [bookmarkId, setBookmarkId] = useState<string | null>(null);
+  const [bookmarked, setBookmarked] = useState(initialBookmarked);
+  const [bookmarkId, setBookmarkId] = useState(initialBookmarkId || null);
 
   const toggleBookmark = async () => {
     try {
@@ -40,6 +46,7 @@ const VideoCard = ({
         await removeBookmark(bookmarkId);
         setBookmarked(false);
         setBookmarkId(null);
+        onBookmarkRemoved?.();
       } else {
         const res = await addBookmark(user.$id, id);
         setBookmarked(true);
@@ -106,8 +113,7 @@ const VideoCard = ({
         <View>
           <TouchableOpacity onPress={toggleBookmark}>
             <Image
-              // source={bookmarked ? icons.bookmarkFilled : icons.bookmarkOutline}
-              source={bookmarked ? icons.bookmark : icons.bookmark}
+              source={bookmarked ? icons.bookmarkFilled : icons.bookmarkOutline}
               className="w-6 h-6"
               resizeMode="contain"
             />
