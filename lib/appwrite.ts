@@ -70,13 +70,7 @@ export async function createUser(
       const safe = encodeURIComponent(name.trim());
       return `https://ui-avatars.com/api/?name=${safe}&size=${size}&background=111827&color=ffffff&rounded=true`;
     }
-
-    // function initialsAvatarUrl(name: string, size = 128) {
-    //   const safe = encodeURIComponent(name.trim());
-    //   const url = `https://ui-avatars.com/api/?name=${safe}&size=${size}&background=111827&color=ffffff&rounded=true`;
-    //   console.log("Generated avatar URL:", url);
-    //   return url;
-    // }
+      
 
     let avatarUrl = initialsAvatarUrl(username);
     if (!avatarUrl || !avatarUrl.startsWith("http")) {
@@ -151,46 +145,6 @@ export async function signOut() {
 }
 
 //  Upload File
-// export async function uploadFile(file: any, type: "image" | "video") {
-//   if (!file) return null;
-
-//   // const { mimeType, ...rest } = file;
-//   // const asset = { type: mimeType, ...rest };
-
-//   try {
-//     const uploadedFile = await storage.createFile({
-//       bucketId: appwriteConfig.storageId,
-//       fileId: ID.unique(),
-//       // file: asset,
-//       file,
-//     });
-
-//     // Always return a full URL string
-//     if (type === "video") {
-//       return storage
-//         .getFileView({
-//           bucketId: appwriteConfig.storageId,
-//           fileId: uploadedFile.$id,
-//         })
-//         .toString();
-//     }
-
-//     return storage
-//       .getFilePreview({
-//         bucketId: appwriteConfig.storageId,
-//         fileId: uploadedFile.$id,
-//         width: 2000,
-//         height: 2000,
-//         gravity: ImageGravity.Top,
-//         quality: 100,
-//         output: ImageFormat.Jpg,
-//       })
-//       .toString();
-//   } catch (error: any) {
-//     throw new Error(error.message || "File upload failed");
-//   }
-// }
-
 // Helper: build a public URL for a file
 function getFileUrl(fileId: string, type: "image" | "video"): string {
   const endpoint = appwriteConfig.endpoint; // e.g. "https://cloud.appwrite.io/v1"
@@ -249,36 +203,6 @@ export function getFilePreview(
 }
 
 //  Create Video Post
-// export async function createVideoPost(form: {
-//   title: string;
-//   thumbnail: any;
-//   video: any;
-//   prompt: string;
-//   userId: string;
-// }) {
-//   try {
-//     const [thumbnailUrl, videoUrl] = await Promise.all([
-//       uploadFile(form.thumbnail, "image"),
-//       uploadFile(form.video, "video"),
-//     ]);
-
-//     return await tables.createRow({
-//       databaseId: appwriteConfig.databaseId,
-//       tableId: appwriteConfig.videoTableId,
-//       rowId: ID.unique(),
-//       data: {
-//         title: form.title,
-//         thumbnail: thumbnailUrl,
-//         video: videoUrl,
-//         prompt: form.prompt,
-//         users: form.userId,
-//       },
-//     });
-//   } catch (error: any) {
-//     throw new Error(error.message || "Failed to create post");
-//   }
-// }
-
 // Create Video Post with URL strings
 export async function createVideoPost(form: {
   title: string;
@@ -311,19 +235,6 @@ export async function createVideoPost(form: {
 }
 
 //  Get all posts
-// export async function getAllPosts(): Promise<VideoPost[]> {
-//   try {
-//     const posts = await tables.listRows({
-//       databaseId: appwriteConfig.databaseId,
-//       tableId: appwriteConfig.videoTableId,
-//     });
-
-//     return posts.rows as unknown as VideoPost[];
-//   } catch (error: any) {
-//     throw new Error(error.message || "Failed to fetch posts");
-//   }
-// }
-
 export async function getAllPosts(): Promise<
   (VideoPost & { creator: User })[]
 > {
